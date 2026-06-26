@@ -63,15 +63,15 @@ def build_headers(token=None):
 
 # 预热会话：先访问主页获取 CDN 所需的 cookie
 def _warmup_session():
-    for i, url in enumerate([
+    for url in [
         'https://www.baomi.org.cn/',
         'https://www.baomi.org.cn/bmCourseDetail/info?id=312bc914-8e11-421b-b9bc-e900fe1a4e50',
-    ]):
+    ]:
         try:
             r = session.get(url, headers=build_headers(), timeout=15, verify=SSL_VERIFY)
-            print(f'[预热] {url} -> {r.status_code} (cookies: {len(session.cookies)})')
+            logging.warning(f'[预热] {url} -> {r.status_code} (cookies: {len(session.cookies)})')
         except Exception as e:
-            print(f'[预热] {url} -> 失败: {e}')
+            logging.warning(f'[预热] {url} -> 失败: {e}')
 
 _warmup_session()
 
