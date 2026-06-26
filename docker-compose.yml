@@ -1,0 +1,10 @@
+services:
+  autobaomiguan:
+    build: .
+    image: autobaomiguan:latest
+    stdin_open: true
+    tty: true
+    ports:
+      - "8765:8765"
+    volumes:
+      - ./data:/app/data

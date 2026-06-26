@@ -1,0 +1,6 @@
+requests>=2.25.0
+colorama>=0.4.4
+pycryptodome>=3.22.0
+qrcode>=7.4.0
+flask>=3.0.0
+pillow>=10.0.0

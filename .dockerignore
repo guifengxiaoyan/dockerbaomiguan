@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+venv/
+env/
+*.env
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.spec
+*.exe
+
+# Git
+.git/
+.gitignore
+
+# Local data
+credentials.json
+data/
+
+# Docs and assets (not needed at runtime)
+docs/
+assets/
+tests/
+
+# Build scripts (not needed at runtime)
+build.bat
+build_exe.py
