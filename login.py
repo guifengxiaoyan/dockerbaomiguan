@@ -43,18 +43,6 @@ DEFAULT_USER_AGENT = (
 # 全局共享会话，复用连接池与 cookie
 session = requests.Session()
 
-# 预热会话：先访问主页获取 CDN 所需的 cookie
-def _warmup_session():
-    try:
-        session.get('https://www.baomi.org.cn/', headers=build_headers(), timeout=15, verify=SSL_VERIFY)
-        session.get('https://www.baomi.org.cn/bmCourseDetail/info?id=312bc914-8e11-421b-b9bc-e900fe1a4e50',
-                    headers=build_headers(), timeout=15, verify=SSL_VERIFY)
-        logging.info('会话预热完成')
-    except Exception as e:
-        logging.warning(f'会话预热失败: {e}')
-
-_warmup_session()
-
 
 def build_headers(token=None):
     """构造请求头；传入 token 时附带 token/authToken"""
@@ -71,6 +59,19 @@ def build_headers(token=None):
         headers['token'] = token
         headers['authToken'] = token
     return headers
+
+
+# 预热会话：先访问主页获取 CDN 所需的 cookie
+def _warmup_session():
+    try:
+        session.get('https://www.baomi.org.cn/', headers=build_headers(), timeout=15, verify=SSL_VERIFY)
+        session.get('https://www.baomi.org.cn/bmCourseDetail/info?id=312bc914-8e11-421b-b9bc-e900fe1a4e50',
+                    headers=build_headers(), timeout=15, verify=SSL_VERIFY)
+        logging.info('会话预热完成')
+    except Exception as e:
+        logging.warning(f'会话预热失败: {e}')
+
+_warmup_session()
 
 
 def rsa_encrypt_pkcs1v15(data: str, public_key: str) -> str:
