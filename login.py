@@ -15,18 +15,17 @@ SSL_VERIFY = os.environ.get('BM_SSL_VERIFY', '1') == '1'
 def _log_request(method, url, headers, body=None):
     if not DEBUG:
         return
-    logging.info(f'>>> {method} {url}')
-    logging.info(f'>>> Headers: {json.dumps({k:v for k,v in headers.items() if k != "authToken"}, ensure_ascii=False)}')
+    print(f'>>> {method} {url}')
+    print(f'>>> Headers: {json.dumps({k:v for k,v in list(headers.items())[:8]}, ensure_ascii=False)}')
     if body:
-        logging.info(f'>>> Body keys: {list(body.keys())}')
+        print(f'>>> Body keys: {list(body.keys())}')
 
 
 def _log_response(resp):
     if not DEBUG:
         return
-    logging.info(f'<<< Status: {resp.status_code}')
-    logging.info(f'<<< Headers: {dict(resp.headers)}')
-    logging.info(f'<<< Body: {resp.text[:300]}')
+    print(f'<<< Status: {resp.status_code}')
+    print(f'<<< Body preview: {resp.text[:200]}')
 
 # 平台固定配置
 SITE_ID = '95'
@@ -43,6 +42,18 @@ DEFAULT_USER_AGENT = (
 
 # 全局共享会话，复用连接池与 cookie
 session = requests.Session()
+
+# 预热会话：先访问主页获取 CDN 所需的 cookie
+def _warmup_session():
+    try:
+        session.get('https://www.baomi.org.cn/', headers=build_headers(), timeout=15, verify=SSL_VERIFY)
+        session.get('https://www.baomi.org.cn/bmCourseDetail/info?id=312bc914-8e11-421b-b9bc-e900fe1a4e50',
+                    headers=build_headers(), timeout=15, verify=SSL_VERIFY)
+        logging.info('会话预热完成')
+    except Exception as e:
+        logging.warning(f'会话预热失败: {e}')
+
+_warmup_session()
 
 
 def build_headers(token=None):
