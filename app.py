@@ -318,7 +318,25 @@ def api_logout():
 def api_diag():
     """网络诊断：测试与保密观 API 的连通性"""
     import requests as req
+    import socket
     results = {}
+
+    # DNS 解析测试
+    try:
+        ip = socket.gethostbyname('www.baomi.org.cn')
+        results['dns'] = {'status': 'OK', 'ip': ip}
+    except Exception as e:
+        results['dns'] = {'status': 'ERROR', 'error': str(e)}
+
+    # SSL 测试
+    try:
+        r = req.get('https://www.baomi.org.cn', timeout=10)
+        results['ssl'] = {'status': r.status_code}
+    except req.exceptions.SSLError as e:
+        results['ssl'] = {'status': 'SSL_ERROR', 'error': str(e)[:100]}
+    except Exception as e:
+        results['ssl'] = {'status': 'ERROR', 'error': str(e)[:100]}
+
     s = req.Session()
 
     tests = [
@@ -341,7 +359,7 @@ def api_diag():
                 'body_preview': r.text[:150],
             }
         except Exception as e:
-            results[name] = {'status': 'ERROR', 'error': str(e)}
+            results[name] = {'status': 'ERROR', 'error': str(e)[:150]}
 
     return jsonify(results)
 
