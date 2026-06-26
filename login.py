@@ -164,7 +164,6 @@ def qr_login(poll_interval: int = 3, timeout: int = 300) -> str:
 
 
 def login(loginName, passWord):
-    login_session = requests.Session()
     try:
         payload = {
             "loginName": encrypt(loginName),
@@ -178,7 +177,7 @@ def login(loginName, passWord):
         }
 
         headers = build_headers()
-        response = login_session.post(LOGIN_URL, json=payload, headers=headers, timeout=30, allow_redirects=False)
+        response = session.post(LOGIN_URL, json=payload, headers=headers, timeout=30, allow_redirects=False)
         if response.status_code != 200:
             logging.error(f"{Fore.RED}登录请求失败，状态码: {response.status_code}, 响应: {response.text[:200]}{Style.RESET_ALL}")
             if response.status_code in (301, 302, 303, 307, 308):
