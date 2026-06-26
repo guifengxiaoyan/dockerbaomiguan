@@ -721,4 +721,17 @@ def index():
 
 
 if __name__ == '__main__':
+    print('[启动] 正在检查网络连通性...')
+    try:
+        import requests as _r, socket
+        ip = socket.gethostbyname('www.baomi.org.cn')
+        print(f'[启动] DNS 解析 www.baomi.org.cn -> {ip}')
+        _resp = _r.get('https://www.baomi.org.cn/portal/main-api/getPublishKey.do',
+                       headers={'User-Agent': 'Mozilla/5.0', 'siteId': '95'}, timeout=10)
+        print(f'[启动] API 连通性: {_resp.status_code}')
+    except Exception as e:
+        print(f'[启动] 网络检查失败: {e}')
+        print('[启动] 继续运行，但 API 调用可能失败')
+
+    print('[启动] 服务运行在 http://0.0.0.0:8765')
     app.run(host='0.0.0.0', port=8765, debug=False, threaded=True)
