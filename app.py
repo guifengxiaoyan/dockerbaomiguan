@@ -314,6 +314,38 @@ def api_logout():
     return jsonify({'success': True})
 
 
+@app.route('/api/diag')
+def api_diag():
+    """网络诊断：测试与保密观 API 的连通性"""
+    import requests as req
+    results = {}
+    s = req.Session()
+
+    tests = [
+        ('getPublishKey', 'GET', 'https://www.baomi.org.cn/portal/main-api/getPublishKey.do', {}),
+        ('getQrToken', 'POST', 'https://www.baomi.org.cn/portal/main-api/v2/spc/getQrToken.do', {}),
+        ('loginInNew', 'POST', 'https://www.baomi.org.cn/portal/main-api/loginInNew.do',
+         {'loginName': 'x', 'passWord': 'x', 'deviceId': 1711, 'deviceOs': 'pc', 'lon': 40, 'lat': 30, 'siteId': '95', 'sinopec': 'false'}),
+    ]
+
+    for name, method, url, body in tests:
+        try:
+            h = login.build_headers()
+            if method == 'GET':
+                r = s.get(url, headers=h, timeout=15, allow_redirects=False)
+            else:
+                r = s.post(url, json=body, headers=h, timeout=15, allow_redirects=False)
+            results[name] = {
+                'status': r.status_code,
+                'redirect': r.headers.get('Location', '') if r.status_code in (301, 302, 307, 308) else '',
+                'body_preview': r.text[:150],
+            }
+        except Exception as e:
+            results[name] = {'status': 'ERROR', 'error': str(e)}
+
+    return jsonify(results)
+
+
 # ── 前端页面 ──────────────────────────────────────────────
 
 INDEX_HTML = r"""<!DOCTYPE html>
@@ -417,7 +449,10 @@ input:focus { border-color: #3b82f6; }
   <h1>保密观 自动刷课</h1>
   <div class="user-info">
     <span id="nickname-display">已登录</span>
-    <button class="btn btn-danger" style="padding:6px 14px;font-size:13px" onclick="logout()">退出</button>
+    <div>
+      <button class="btn" style="padding:6px 14px;font-size:13px;background:#475569;color:#e2e8f0;margin-right:6px" onclick="runDiag()">诊断</button>
+      <button class="btn btn-danger" style="padding:6px 14px;font-size:13px" onclick="logout()">退出</button>
+    </div>
   </div>
 
   <div class="grid">
@@ -632,6 +667,28 @@ async function logout() {
   document.getElementById('dashboard-panel').classList.add('hidden');
   document.getElementById('password').value = '';
   document.getElementById('log-window').classList.add('hidden');
+}
+
+async function runDiag() {
+  document.getElementById('log-window').classList.remove('hidden');
+  document.getElementById('log-lines').innerHTML = '';
+  logSince = 0;
+  appendLogLines([{t: '正在诊断网络连通性...'}]);
+  try {
+    const resp = await fetch('/api/diag');
+    const data = await resp.json();
+    for (const [name, r] of Object.entries(data)) {
+      if (r.status === 'ERROR') {
+        appendLogLines([{t: name + ': 连接失败 - ' + r.error}]);
+      } else if (r.redirect) {
+        appendLogLines([{t: name + ': ' + r.status + ' 重定向 -> ' + r.redirect, cls: 'error'}]);
+      } else {
+        appendLogLines([{t: name + ': ' + r.status + ' ' + (r.body_preview || '').substring(0, 60)}]);
+      }
+    }
+  } catch(e) {
+    appendLogLines([{t: '诊断失败: ' + e.message}]);
+  }
 }
 
 checkLogin();
