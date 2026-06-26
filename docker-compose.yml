@@ -7,4 +7,7 @@ services:
     network_mode: host
     volumes:
       - ./data:/app/data
+    environment:
+      - BM_DEBUG=1
+      - BM_SSL_VERIFY=0
     restart: unless-stopped

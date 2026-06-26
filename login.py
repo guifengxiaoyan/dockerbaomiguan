@@ -2,10 +2,31 @@ import requests
 import logging
 import json
 import time
+import os
 from colorama import Fore, Style
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_v1_5
 import base64
+
+DEBUG = os.environ.get('BM_DEBUG', '0') == '1'
+SSL_VERIFY = os.environ.get('BM_SSL_VERIFY', '1') == '1'
+
+
+def _log_request(method, url, headers, body=None):
+    if not DEBUG:
+        return
+    logging.info(f'>>> {method} {url}')
+    logging.info(f'>>> Headers: {json.dumps({k:v for k,v in headers.items() if k != "authToken"}, ensure_ascii=False)}')
+    if body:
+        logging.info(f'>>> Body keys: {list(body.keys())}')
+
+
+def _log_response(resp):
+    if not DEBUG:
+        return
+    logging.info(f'<<< Status: {resp.status_code}')
+    logging.info(f'<<< Headers: {dict(resp.headers)}')
+    logging.info(f'<<< Body: {resp.text[:300]}')
 
 # 平台固定配置
 SITE_ID = '95'
@@ -68,7 +89,11 @@ def rsa_encrypt_pkcs1v15(data: str, public_key: str) -> str:
 
 def encrypt(data):
     try:
-        response = session.get(PUBLISH_KEY_URL, headers=build_headers())
+        url = PUBLISH_KEY_URL
+        headers = build_headers()
+        _log_request('GET', url, headers)
+        response = session.get(url, headers=headers, timeout=30, verify=SSL_VERIFY)
+        _log_response(response)
         if response.status_code != 200:
             logging.error(f"{Fore.RED}获取公钥失败，状态码: {response.status_code}{Style.RESET_ALL}")
             return None
@@ -95,7 +120,11 @@ def parse_qr_token(qr_payload: str) -> str:
 
 
 def get_qr_code():
-    response = session.post(QR_TOKEN_URL, headers=build_headers())
+    url = QR_TOKEN_URL
+    headers = build_headers()
+    _log_request('POST', url, headers)
+    response = session.post(url, headers=headers, timeout=30, verify=SSL_VERIFY)
+    _log_response(response)
     if response.status_code != 200:
         raise Exception(f"获取二维码失败，状态码: {response.status_code}")
 
@@ -109,7 +138,11 @@ def get_qr_code():
 
 
 def check_qr_login(qr_token: str) -> int:
-    response = session.post(QR_CHECK_URL, params={"qrToken": qr_token}, headers=build_headers())
+    url = QR_CHECK_URL
+    headers = build_headers()
+    _log_request('POST', url, headers)
+    response = session.post(url, params={"qrToken": qr_token}, headers=headers, timeout=30, verify=SSL_VERIFY)
+    _log_response(response)
     if response.status_code != 200:
         raise Exception(f"检查二维码登录状态失败，状态码: {response.status_code}")
 
@@ -177,7 +210,9 @@ def login(loginName, passWord):
         }
 
         headers = build_headers()
-        response = session.post(LOGIN_URL, json=payload, headers=headers, timeout=30, allow_redirects=False)
+        _log_request('POST', LOGIN_URL, headers, payload)
+        response = session.post(LOGIN_URL, json=payload, headers=headers, timeout=30, verify=SSL_VERIFY, allow_redirects=False)
+        _log_response(response)
         if response.status_code != 200:
             logging.error(f"{Fore.RED}登录请求失败，状态码: {response.status_code}, 响应: {response.text[:200]}{Style.RESET_ALL}")
             if response.status_code in (301, 302, 303, 307, 308):
