@@ -64,7 +64,7 @@ def rsa_encrypt_pkcs1v15(data: str, public_key: str) -> str:
 
 def encrypt(data):
     try:
-        response = session.get(PUBLISH_KEY_URL)
+        response = session.get(PUBLISH_KEY_URL, headers=build_headers())
         if response.status_code != 200:
             logging.error(f"{Fore.RED}获取公钥失败，状态码: {response.status_code}{Style.RESET_ALL}")
             return None
@@ -91,7 +91,7 @@ def parse_qr_token(qr_payload: str) -> str:
 
 
 def get_qr_code():
-    response = session.post(QR_TOKEN_URL, headers={"siteId": SITE_ID})
+    response = session.post(QR_TOKEN_URL, headers=build_headers())
     if response.status_code != 200:
         raise Exception(f"获取二维码失败，状态码: {response.status_code}")
 
@@ -105,7 +105,7 @@ def get_qr_code():
 
 
 def check_qr_login(qr_token: str) -> int:
-    response = session.post(QR_CHECK_URL, params={"qrToken": qr_token})
+    response = session.post(QR_CHECK_URL, params={"qrToken": qr_token}, headers=build_headers())
     if response.status_code != 200:
         raise Exception(f"检查二维码登录状态失败，状态码: {response.status_code}")
 
@@ -172,10 +172,7 @@ def login(loginName, passWord):
             "sinopec": 'false'
         }
 
-        headers = {
-            'Content-Type': 'application/json',
-            'siteId': SITE_ID
-        }
+        headers = build_headers()
         response = session.post(LOGIN_URL, json=payload, headers=headers)
         if response.status_code != 200:
             logging.error(f"{Fore.RED}登录请求失败，状态码: {response.status_code}{Style.RESET_ALL}")
