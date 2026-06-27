@@ -36,11 +36,18 @@ _log_index = 0
 
 import re
 _noise_patterns = [
-    re.compile(r'\d+\.\d+\.\d+\.\d+ - - \['),                        # HTTP access log (all variants)
+    re.compile(r'\d+\.\d+\.\d+\.\d+ - - \['),
     re.compile(r'Serving Flask app|Debug mode:'),
     re.compile(r'development server'),
     re.compile(r'Running on '),
     re.compile(r'Press CTRL\+C'),
+    re.compile(r'^>>> (GET|POST|PUT|DELETE) '),
+    re.compile(r'^>>> Headers:'),
+    re.compile(r'^>>> Body keys:'),
+    re.compile(r'^<<< Status:'),
+    re.compile(r'^<<< Body preview:'),
+    re.compile(r'^\[' + '\x1b' + r'\[\d+m(启动|预热)'),
+    re.compile(r'^' + '\x1b' + r'\[\d+m'),
 ]
 
 
@@ -54,6 +61,9 @@ class LogCollector(io.StringIO):
     def write(self, s):
         if s and s.strip():
             stripped = s.rstrip()
+            for code in ['\x1b[31m', '\x1b[32m', '\x1b[33m', '\x1b[34m', '\x1b[35m',
+                          '\x1b[36m', '\x1b[0m', '\x1b[1m', '\x1b[30m']:
+                stripped = stripped.replace(code, '')
             if not _is_noise(stripped):
                 _append_log(stripped)
         return super().write(s)
